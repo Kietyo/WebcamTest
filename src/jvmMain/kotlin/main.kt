@@ -3,6 +3,7 @@ import com.github.sarxos.webcam.WebcamResolution
 import com.soywiz.klock.TimeSpan
 import com.soywiz.korge.Korge
 import com.soywiz.korge.view.addFixedUpdater
+import com.soywiz.korge.view.addUpdater
 import com.soywiz.korge.view.image
 import com.soywiz.korim.awt.toAwtNativeImage
 import com.soywiz.korim.awt.toBMP32
@@ -48,15 +49,23 @@ suspend fun main() = Korge(width = 1920, height = 1080, bgcolor = Colors["#2b2b2
     val bitmap = Bitmap32(1920, 1080)
     val image = image(bitmap)
 
-    addFixedUpdater(TimeSpan(50.0)) {
+    addUpdater {
         val webcamImage = measureTimedValue {
             webcam.image
         }
 
+        val toAwtNativeImageTime = measureTimedValue {
+            webcamImage.value.toAwtNativeImage()
+        }
+
         val updateBitmapTime = measureTime {
-            image.bitmap = webcamImage.value.toAwtNativeImage().slice()
+            toAwtNativeImageTime.value.copyUnchecked(0, 0, bitmap, 0, 0, 1920, 1080)
+//            webcamImage.value.toAwtNativeImage().copyUnchecked()
+            bitmap.contentVersion++
+//            image.bitmap = webcamImage.value.toAwtNativeImage().slice()
         }
         println("webcamImage: ${webcamImage.duration}")
+        println("toAwtNativeImageTime: ${toAwtNativeImageTime.duration}")
         println("updateBitmapTime: $updateBitmapTime")
     }
 
